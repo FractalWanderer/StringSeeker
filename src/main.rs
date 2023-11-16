@@ -1,5 +1,4 @@
 use std::{env, fs};
-use std::path::PathBuf;
 use clap::Parser;
 use colored::{Color, Colorize};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -36,7 +35,7 @@ impl CommandTrait for Commands {
 
 fn output_search_results(search_results: Vec<FileSearchResult>, no_highlight: bool) {
 
-    if search_results.len() <= 0 {
+    if search_results.len() < 1 {
         println!("No results found.");
         return;
     }
@@ -100,15 +99,10 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
 
         match dir {
             Ok(entry) => {
-                if entry.file_type().is_file() && (!is_hidden(&entry) || include_hidden_files) {
-                    let search_results = search_entry_for_text(text, context_window_size, entry);
-                    match search_results {
-                        None => {}
-                        Some(result) => {
-                            all_search_results.push(result);
-                        }
+                if  should_include_dir_entry(&entry, include_hidden_files){
+                    if let Some(search_result) = search_entry_for_text(text, context_window_size, entry) {
+                        all_search_results.push(search_result);
                     }
-
                 }
             }
             // todo Do we want to display errors/include a flag to determine if we should display errors?
@@ -117,6 +111,10 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
     }
 
     all_search_results
+}
+
+fn should_include_dir_entry(entry: &DirEntry, include_hidden_files: bool) -> bool {
+    return entry.file_type().is_file() && (!is_hidden(&entry) || include_hidden_files);
 }
 
 fn search_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry) -> Option<FileSearchResult> {
