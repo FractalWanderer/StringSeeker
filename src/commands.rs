@@ -15,6 +15,9 @@ pub enum Commands {
         #[clap(value_parser)]
         text: String,
 
+        #[clap(value_enum)]
+        search_direction: SearchDirection,
+
         #[clap(value_parser, default_value_t = 2)]
         context_window_size: usize,
 
@@ -26,16 +29,12 @@ pub enum Commands {
 
         #[clap(value_parser, long = "include-hidden-directories")]
         include_hidden_directories: bool,
-
-        #[clap(value_enum)]
-        search_direction: SearchDirection
     }
 }
 
 pub trait CommandTrait {
     fn execute(&self);
 }
-
 
 #[derive(clap::ValueEnum, Clone)]
 pub enum SearchDirection {

@@ -1,7 +1,7 @@
 use std::{env, fs};
 use std::path::PathBuf;
 use clap::Parser;
-use colored::Colorize;
+use colored::{Color, Colorize};
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::commands::{Cli, Commands, CommandTrait, SearchDirection};
 use walkdir::{DirEntry, WalkDir};
@@ -28,6 +28,7 @@ impl CommandTrait for Commands {
                     SearchDirection::In => search_in(*include_hidden_files)
                 };
 
+                output_search_results(search_results, *no_highlight);
             }
         }
     }
@@ -36,18 +37,41 @@ impl CommandTrait for Commands {
 fn output_search_results(search_results: Vec<FileSearchResult>, no_highlight: bool) {
 
     for search_result in search_results {
+
         if no_highlight {
-            println!("\n Text '{}' found in file: {}\n", search_result.found_text, search_result.file_name)
+            println!("Text '{}' found in file: {}", search_result.found_text, search_result.file_name);
+            println!("Full File Path: {}", search_result.file_path);
         } else {
-            println!("\nText '{}' found in file: {}\n", search_result.found_text.red(), search_result.file_name.green())
+            println!("Text '{}' found in file: {}", search_result.found_text.red(), search_result.file_name.green());
+            println!("Full File Path: {}", search_result.file_path.green());
         }
 
         for window in search_result.context_windows {
+            println!("\nOccurrence in file: {}, File: {}", window.occurrence_number, search_result.file_name);
+            println!("------------");
 
+            if no_highlight {
+                for line in window.window_contents {
+                    println!("{}", line);
+                }
+            } else{
+                for line in window.window_contents {
+                    println!("{}", highlight_text(&line, &search_result.found_text, Color::Red));
+                }
+            }
 
+            println!("------------\n");
         }
+
     }
 
+}
+
+fn highlight_text(full_text: &str, text_to_highlight: &str, color: Color) -> String {
+
+    let replacement = text_to_highlight.color(color).to_string();
+
+    return full_text.replace(text_to_highlight, &replacement);
 }
 
 fn search_over(include_hidden_directories: bool) -> Vec<FileSearchResult> {
@@ -73,8 +97,6 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
     let mut all_search_results: Vec<FileSearchResult> = Vec::new();
 
     let progress_bar = create_progress_bar();
-
-    let mut context_windows: Vec<ContextWindow> = Vec::new();
 
     for (index, dir) in WalkDir::new(working_directory).min_depth(1).into_iter().enumerate() {
 
@@ -106,7 +128,7 @@ fn search_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry
 
     let mut number_of_occurrences: u64 = 0;
 
-    let contents: Vec<String> = fs::read_to_string(&entry.path()).unwrap().split("\n").map(|line| line.to_string()).collect();
+    let contents: Vec<String> = fs::read_to_string(&entry.path()).unwrap_or_default().split("\n").map(|line| line.to_string()).collect();
 
     let mut context_windows: Vec<ContextWindow> = Vec::new();
 
