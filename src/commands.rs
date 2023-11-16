@@ -16,7 +16,7 @@ pub enum Commands {
         text: String,
 
         #[clap(value_parser, default_value_t = 2)]
-        context_window_size: u32,
+        context_window_size: usize,
 
         #[clap(value_parser, long = "no-highlight")]
         no_highlight: bool,
@@ -24,7 +24,10 @@ pub enum Commands {
         #[clap(value_parser, long = "output-file")]
         output_file: bool,
 
-        #[clap(arg_enum)]
+        #[clap(value_parser, long = "include-hidden-directories")]
+        include_hidden_directories: bool,
+
+        #[clap(value_enum)]
         search_direction: SearchDirection
     }
 }
@@ -34,7 +37,7 @@ pub trait CommandTrait {
 }
 
 
-#[derive(Clone)]
+#[derive(clap::ValueEnum, Clone)]
 pub enum SearchDirection {
     Under,
     UnderInclusive,
