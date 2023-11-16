@@ -21,11 +21,11 @@ impl CommandTrait for Commands {
             Commands::Find { text, context_window_size, no_highlight, output_file, include_hidden_directories: include_hidden_files, search_direction } => {
 
                 let search_results = match search_direction {
-                    SearchDirection::Under => search_under(text, *context_window_size, *include_hidden_files),
-                    SearchDirection::UnderInclusive => search_under_inclusive(*include_hidden_files),
+                    SearchDirection::Under => search_under(text, *context_window_size, *include_hidden_files, 2, usize::MAX),
+                    SearchDirection::UnderInclusive => search_under(text, *context_window_size, *include_hidden_files, 1, usize::MAX),
                     SearchDirection::Over => search_over(*include_hidden_files),
                     SearchDirection::OverInclusive => search_over_inclusive(*include_hidden_files),
-                    SearchDirection::In => search_in(*include_hidden_files)
+                    SearchDirection::In => search_under(text, *context_window_size, *include_hidden_files, 1, 1)
                 };
 
                 output_search_results(search_results, *no_highlight);
@@ -36,13 +36,18 @@ impl CommandTrait for Commands {
 
 fn output_search_results(search_results: Vec<FileSearchResult>, no_highlight: bool) {
 
+    if search_results.len() <= 0 {
+        println!("No results found.");
+        return;
+    }
+
     for search_result in search_results {
 
         if no_highlight {
-            println!("Text '{}' found in file: {}", search_result.found_text, search_result.file_name);
+            println!("Text '{}' found in file {}. Number of occurrences: {}", search_result.found_text, search_result.file_name, search_result.number_of_occurrences);
             println!("Full File Path: {}", search_result.file_path);
         } else {
-            println!("Text '{}' found in file: {}", search_result.found_text.red(), search_result.file_name.green());
+            println!("Text '{}' found in file {}. Number of occurrences: {}", search_result.found_text.red(), search_result.file_name.green(), search_result.number_of_occurrences.to_string().yellow());
             println!("Full File Path: {}", search_result.file_path.green());
         }
 
@@ -62,9 +67,7 @@ fn output_search_results(search_results: Vec<FileSearchResult>, no_highlight: bo
 
             println!("------------\n");
         }
-
     }
-
 }
 
 fn highlight_text(full_text: &str, text_to_highlight: &str, color: Color) -> String {
@@ -85,12 +88,7 @@ fn search_over_inclusive(include_hidden_directories: bool) -> Vec<FileSearchResu
     todo!()
 }
 
-fn search_in(include_hidden_directories: bool) -> Vec<FileSearchResult> {
-
-    todo!()
-}
-
-fn search_under(text: &str, context_window_size: usize, include_hidden_files: bool) -> Vec<FileSearchResult> {
+fn search_under(text: &str, context_window_size: usize, include_hidden_files: bool, min_depth: usize, max_depth: usize) -> Vec<FileSearchResult> {
 
     let working_directory = env::current_dir().expect("Unable to get the current working directory. Cannot proceed.");
 
@@ -98,10 +96,7 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
 
     let progress_bar = create_progress_bar();
 
-    for (index, dir) in WalkDir::new(working_directory).min_depth(1).into_iter().enumerate() {
-
-        progress_bar.set_message("Processing...");
-        progress_bar.set_position(index as u64);
+    for dir in progress_bar.wrap_iter(WalkDir::new(working_directory).min_depth(min_depth).max_depth(max_depth).into_iter()) {
 
         match dir {
             Ok(entry) => {
@@ -171,11 +166,6 @@ fn search_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry
     }
 
     None
-}
-
-fn search_under_inclusive(include_hidden_directories: bool) -> Vec<FileSearchResult> {
-
-    todo!()
 }
 
 fn is_hidden(entry: &DirEntry) -> bool {
