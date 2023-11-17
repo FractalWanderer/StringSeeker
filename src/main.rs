@@ -18,7 +18,7 @@ fn main() {
 impl CommandTrait for Commands {
     fn execute(&self) {
         match &self {
-            Commands::Find { text, context_window_size, no_highlight, output_file, include_hidden_directories: include_hidden_files, search_direction } => {
+            Commands::Find { text, context_window_size, no_highlight, include_hidden_directories: include_hidden_files, search_direction } => {
 
                 let search_results = match search_direction {
                     SearchDirection::Under => search_under(text, *context_window_size, *include_hidden_files, 2, usize::MAX),

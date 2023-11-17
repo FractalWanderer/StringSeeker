@@ -24,9 +24,6 @@ pub enum Commands {
         #[clap(value_parser, long = "no-highlight", help = "Disables highlighting of text. This can sometimes be useful for consoles that do not support highlighting.")]
         no_highlight: bool,
 
-        #[clap(value_parser, long = "output-file", help = "Outputs the search results to a file.")]
-        output_file: bool,
-
         #[clap(value_parser, long = "include-hidden-directories", help = "Includes hidden directories/files in the search.")]
         include_hidden_directories: bool,
     }
