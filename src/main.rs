@@ -101,11 +101,6 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
     all_search_results
 }
 
-fn output_to_file(search_results: Vec<FileSearchResult>, file_path: &str) {
-
-
-}
-
 fn set_progress_bar_message(message: String, progress_bar: &ProgressBar) {
     let cow_string = Cow::Owned(message);
 
