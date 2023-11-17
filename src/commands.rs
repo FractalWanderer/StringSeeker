@@ -40,7 +40,5 @@ pub trait CommandTrait {
 pub enum SearchDirection {
     Under,
     UnderInclusive,
-    Over,
-    OverInclusive,
     In,
 }

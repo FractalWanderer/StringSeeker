@@ -23,8 +23,6 @@ impl CommandTrait for Commands {
                 let search_results = match search_direction {
                     SearchDirection::Under => search_under(text, *context_window_size, *include_hidden_files, 2, usize::MAX),
                     SearchDirection::UnderInclusive => search_under(text, *context_window_size, *include_hidden_files, 1, usize::MAX),
-                    SearchDirection::Over => search_over(*include_hidden_files),
-                    SearchDirection::OverInclusive => search_over_inclusive(*include_hidden_files),
                     SearchDirection::In => search_under(text, *context_window_size, *include_hidden_files, 1, 1)
                 };
 
@@ -75,16 +73,6 @@ fn highlight_text(full_text: &str, text_to_highlight: &str, color: Color) -> Str
     let replacement = text_to_highlight.color(color).to_string();
 
     return full_text.replace(text_to_highlight, &replacement);
-}
-
-fn search_over(include_hidden_directories: bool) -> Vec<FileSearchResult> {
-
-    todo!();
-}
-
-fn search_over_inclusive(include_hidden_directories: bool) -> Vec<FileSearchResult> {
-
-    todo!()
 }
 
 fn search_under(text: &str, context_window_size: usize, include_hidden_files: bool, min_depth: usize, max_depth: usize) -> Vec<FileSearchResult> {
