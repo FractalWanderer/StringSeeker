@@ -1,4 +1,5 @@
 use std::{env, fs};
+use std::borrow::Cow;
 use clap::Parser;
 use colored::{Color, Colorize};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -27,13 +28,13 @@ impl CommandTrait for Commands {
                     SearchDirection::In => search_under(text, *context_window_size, *include_hidden_files, 1, 1)
                 };
 
-                output_search_results(search_results, *no_highlight);
+                print_search_results_to_console(search_results, *no_highlight);
             }
         }
     }
 }
 
-fn output_search_results(search_results: Vec<FileSearchResult>, no_highlight: bool) {
+fn print_search_results_to_console(search_results: Vec<FileSearchResult>, no_highlight: bool) {
 
     if search_results.len() < 1 {
         println!("No results found.");
@@ -78,7 +79,6 @@ fn highlight_text(full_text: &str, text_to_highlight: &str, color: Color) -> Str
 
 fn search_over(include_hidden_directories: bool) -> Vec<FileSearchResult> {
 
-
     todo!();
 }
 
@@ -93,14 +93,14 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
 
     let mut all_search_results: Vec<FileSearchResult> = Vec::new();
 
-    let progress_bar = create_progress_bar();
+    let progress_bar = create_indeterminate_progress_bar();
 
     for dir in progress_bar.wrap_iter(WalkDir::new(working_directory).min_depth(min_depth).max_depth(max_depth).into_iter()) {
-
         match dir {
             Ok(entry) => {
+                set_progress_bar_message(entry.file_name().to_str().unwrap_or("Unknown file.").to_string(), &progress_bar);
                 if  should_include_dir_entry(&entry, include_hidden_files){
-                    if let Some(search_result) = search_entry_for_text(text, context_window_size, entry) {
+                    if let Some(search_result) = search_directory_entry_for_text(text, context_window_size, entry) {
                         all_search_results.push(search_result);
                     }
                 }
@@ -113,11 +113,22 @@ fn search_under(text: &str, context_window_size: usize, include_hidden_files: bo
     all_search_results
 }
 
+fn output_to_file(search_results: Vec<FileSearchResult>, file_path: &str) {
+
+
+}
+
+fn set_progress_bar_message(message: String, progress_bar: &ProgressBar) {
+    let cow_string = Cow::Owned(message);
+
+    progress_bar.set_message(cow_string);
+}
+
 fn should_include_dir_entry(entry: &DirEntry, include_hidden_files: bool) -> bool {
     return entry.file_type().is_file() && (!is_hidden(&entry) || include_hidden_files);
 }
 
-fn search_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry) -> Option<FileSearchResult> {
+fn search_directory_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry) -> Option<FileSearchResult> {
 
     let mut number_of_occurrences: u64 = 0;
 
@@ -147,7 +158,6 @@ fn search_entry_for_text(text: &str, context_window_size: usize, entry: DirEntry
                 window_contents: contents[start..end].to_vec()
             });
         }
-
     }
 
     if number_of_occurrences > 0 {
@@ -173,11 +183,11 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn create_progress_bar() -> ProgressBar {
+fn create_indeterminate_progress_bar() -> ProgressBar {
     let pb = ProgressBar::new_spinner();
 
     pb.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .template("{msg}\n🔎 {spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] Files searched: {pos:>7}")
         .expect("Unable to set the progress bar template."));
 
     return pb;
