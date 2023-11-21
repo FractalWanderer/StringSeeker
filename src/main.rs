@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use clap::Parser;
 use colored::{Color, Colorize};
 use indicatif::{ProgressBar, ProgressStyle};
-use crate::commands::{Cli, Commands, CommandTrait, SearchDirection};
+use crate::commands::{Cli, CommandTrait, SearchDirection};
 use walkdir::{DirEntry, WalkDir};
 
 mod commands;
@@ -11,24 +11,19 @@ mod commands;
 fn main() {
     let cli = Cli::parse();
 
-    cli.command.execute();
+    cli.execute();
 }
 
-
-impl CommandTrait for Commands {
+impl CommandTrait for Cli {
     fn execute(&self) {
-        match &self {
-            Commands::Find { text, context_window_size, no_highlight, include_hidden_directories: include_hidden_files, search_direction } => {
 
-                let search_results = match search_direction {
-                    SearchDirection::Under => search_under(text, *context_window_size, *include_hidden_files, 2, usize::MAX),
-                    SearchDirection::UnderInclusive => search_under(text, *context_window_size, *include_hidden_files, 1, usize::MAX),
-                    SearchDirection::In => search_under(text, *context_window_size, *include_hidden_files, 1, 1)
-                };
+        let search_results = match &self.search_direction {
+            SearchDirection::Under => search_under(&self.text, self.context_window_size, self.include_hidden_files, 2, usize::MAX),
+            SearchDirection::UnderInclusive => search_under(&self.text, self.context_window_size, self.include_hidden_files, 1, usize::MAX),
+            SearchDirection::In => search_under(&self.text, self.context_window_size, self.include_hidden_files, 1, 1)
+        };
 
-                print_search_results_to_console(search_results, *no_highlight);
-            }
-        }
+        print_search_results_to_console(search_results, self.no_highlight);
     }
 }
 
